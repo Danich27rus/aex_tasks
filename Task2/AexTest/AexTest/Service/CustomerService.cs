@@ -68,6 +68,7 @@ public class CustomerService : ICustomerService
         {
             return await _db.Customers
                 .Include(c => c.Orders)
+                .Include(c => c.Manager)
                 .ToListAsync();
         }
         catch (Exception ex)

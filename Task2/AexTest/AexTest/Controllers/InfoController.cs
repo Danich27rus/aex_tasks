@@ -1,4 +1,5 @@
 ﻿using AexTest.Common;
+using AexTest.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AexTest.Controllers;
@@ -30,11 +31,19 @@ public class InfoController : ControllerBase
             c.Orders.Any(o => o.Date >= beginDate && o.Amount >= sumAmount)
         ).ToList();
 
-        if (filteredCustomers.Count == 0)
+        var customerViewModels = filteredCustomers.SelectMany(c => c.Orders.Where(o => o.Date >= beginDate && o.Amount >= sumAmount)
+                                           .Select(o => new CustomerViewModel
+                                           {
+                                               CustomerName = c.Name,
+                                               ManagerName = c.Manager?.Name,
+                                               Amount = o.Amount
+                                           })).ToList();
+
+        if (customerViewModels.Count == 0)
         {
             return StatusCode(StatusCodes.Status204NoContent);
         }
 
-        return StatusCode(StatusCodes.Status200OK, filteredCustomers);
+        return StatusCode(StatusCodes.Status200OK, customerViewModels);
     }
 }
