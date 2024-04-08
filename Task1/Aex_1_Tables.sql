@@ -38,15 +38,17 @@ INSERT INTO Orders VALUES
 ('30-12-2022 10:00:00',	1000, 1),
 ('01-01-2023 10:00:00',	800, 3),
 ('01-01-2023 10:00:00',	1000, 1),
-('01-01-2023 10:00:00',	800, 3)
+('01-01-2023 10:00:00',	800, 3);
 
-SELECT SUM(Amount) as ResultValue, CustomersName, ManagersName
-FROM
-( 
-	SELECT Amount, CustomerID, Customers.Name as CustomersName, Managers.Name as ManagersName FROM Orders
+
+WITH Result AS (
+    SELECT Amount, Customers.Name AS CustomersName, Managers.Name AS ManagersName 
+    FROM Orders
 		right join Customers ON Orders.CustomerID = Customers.ID
 		right join Managers ON Customers.ManagerID = Managers.ID
-	WHERE Date > '01-01-2023 00:00:00'
-) AS Result
+    WHERE Date > '2023-01-01 00:00:00'
+)
+SELECT SUM(Amount) AS ResultValue, CustomersName, ManagersName
+FROM Result
 GROUP BY CustomersName, ManagersName
 HAVING SUM(Amount) > 1000;

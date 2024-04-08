@@ -63,6 +63,18 @@ public class OrderService : IOrderService
         }
     }
 
+    public async Task<List<Order>> GetOrderOverAmountAsync(int amount)
+    {
+        try
+        {
+            return await _db.Orders.Where(o => o.Amount >= amount).ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            return null;
+        }
+    }
+
     public async Task<List<Order>> GetOrdersAsync()
     {
         try

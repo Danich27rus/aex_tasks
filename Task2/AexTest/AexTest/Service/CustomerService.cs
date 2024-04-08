@@ -62,14 +62,17 @@ public class CustomerService : ICustomerService
         }
     }
 
+    public async void GetCustomerInfoAsync(Customer customer)
+    {
+        await _db.Entry(customer).Collection(c => c.Orders).Query().LoadAsync();
+        await _db.Entry(customer).Reference(c => c.Manager).Query().LoadAsync();
+    }
+
     public async Task<List<Customer>> GetCustomersAsync()
     {
         try
         {
-            return await _db.Customers
-                .Include(c => c.Orders)
-                .Include(c => c.Manager)
-                .ToListAsync();
+            return await _db.Customers.ToListAsync();
         }
         catch (Exception ex)
         {

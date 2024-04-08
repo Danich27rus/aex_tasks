@@ -8,42 +8,51 @@ public class InfoController : ControllerBase
 {
     private readonly ICustomerService _customersService;
     private readonly IOrderService _ordersService;
-    private readonly IManagerService _managersService;
 
-    public InfoController(ICustomerService customersService, IOrderService orderService, IManagerService managerService)
+    public InfoController(ICustomerService customersService, IOrderService orderService)
     {
         _customersService = customersService;
         _ordersService = orderService;
-        _managersService = managerService;
     }
 
     [HttpGet("byDateAndId")]
     public async Task<IActionResult> GetCustomers(DateTime beginDate, int sumAmount)
     {
-        var customers = await _customersService.GetCustomersAsync();
+        List<CustomerViewModel> resultCustomers = new();
 
-        if (customers == null || customers.Count == 0)
+        var orders = await _ordersService.GetOrderOverAmountAsync(sumAmount);
+
+        if (orders == null || orders.Count == 0)
         {
             return StatusCode(StatusCodes.Status204NoContent);
         }
 
-        var filteredCustomers = customers.Where(c =>
-            c.Orders.Any(o => o.Date >= beginDate && o.Amount >= sumAmount)
-        ).ToList();
+        var customerIds = orders.Where(o => o.Date >= beginDate).Select(o => o.CustomerID).Distinct();
 
-        var customerViewModels = filteredCustomers.SelectMany(c => c.Orders.Where(o => o.Date >= beginDate && o.Amount >= sumAmount)
-                                           .Select(o => new CustomerViewModel
-                                           {
-                                               CustomerName = c.Name,
-                                               ManagerName = c.Manager?.Name,
-                                               Amount = o.Amount
-                                           })).ToList();
+        foreach (int id in customerIds)
+        {
+            Customer customer = await _customersService.GetCustomerAsync(id);
+            if (customer == null)
+            {
+                continue;
+            }
 
-        if (customerViewModels.Count == 0)
+            _customersService.GetCustomerInfoAsync(customer);
+            var customerViewModels = customer.Orders.Select(o => new CustomerViewModel
+            {
+                CustomerName = customer.Name,
+                ManagerName = customer.Manager.Name,
+                Amount = o.Amount
+            });
+
+            resultCustomers.AddRange(customerViewModels);
+        }
+
+        if (resultCustomers.Count == 0)
         {
             return StatusCode(StatusCodes.Status204NoContent);
         }
 
-        return StatusCode(StatusCodes.Status200OK, customerViewModels);
+        return StatusCode(StatusCodes.Status200OK, resultCustomers);
     }
 }
